@@ -59,7 +59,7 @@ setx PYTHONNOUSERSITE 1
 
 The models come pre-trained, so this step is completely optional.
 
-If you want to train the models yourself, execute the `semotion_recognition.ipynb` notebook.
+If you want to train the models yourself, check out the [Jupyter Notebook](https://github.com/MaksymShcherbak/emotion_recognition_train).
 
 ## Running the Application
 
@@ -70,11 +70,14 @@ cd server
 python main.py
 ```
 
+The server runs at `http://localhost:5000` by default.
+
 Client:
 
 ```bat
 cd client
+npm install
 npm run dev
 ```
 
-The project will be accessible at `http://localhost:3000`.
+The project will be launched with ⚡ (Vite)[https://vite.dev/].

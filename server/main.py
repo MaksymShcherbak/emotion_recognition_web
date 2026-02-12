@@ -9,15 +9,15 @@ import os
 
 models = {
     "model_dense": {
-        "model": load_model("../model_dense.keras"),
+        "model": load_model("model_dense.keras"),
         "image_size": (48, 48),
     },
     "model_convolutional": {
-        "model": load_model("../model_convolutional.keras"),
+        "model": load_model("model_convolutional.keras"),
         "image_size": (48, 48),
     },
     "model_mobilenetv2": {
-        "model": load_model("../model_mobilenetv2.keras"),
+        "model": load_model("model_mobilenetv2.keras"),
         "image_size": (224, 224),
     },
 }
@@ -236,6 +236,6 @@ def post_predict_video():
 
     return jsonify({"clientId": clientId})
 
-
 if __name__ == "__main__":
-    app.run(debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
