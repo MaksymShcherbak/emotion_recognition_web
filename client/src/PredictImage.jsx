@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import PredictionPlot from "./PredictionPlot";
 import Controls from "./Controls";
 
@@ -13,11 +13,35 @@ function PredictImage({ model }) {
   const [progress, setProgress] = useState("");
   const [fraction, setFraction] = useState(0.0);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [gallery, setGallery] = useState([]);
+  const [selectedExample, setSelectedExample] = useState(null);
 
   const fileInputRef = useRef(null);
 
-  const handleFile = (file) => {
+  useEffect(() => {
+    const nums = new Set();
+    while (nums.size < 5) {
+      nums.add(Math.floor(Math.random() * 9) + 1);
+    }
+    setGallery([...nums]);
+  }, []);
+
+  const handleGallerySelect = async (num) => {
+    if (isPredicting) return;
+
+    setSelectedExample(num);
+
+    const response = await fetch(`/examples/${num}.jpg`);
+    const blob = await response.blob();
+    const file = new File([blob], `${num}.jpg`, { type: "image/jpeg" });
+
+    handleFile(file, true);
+  };
+
+  const handleFile = (file, fromGallery = false) => {
     if (!file) return;
+
+    if (!fromGallery) setSelectedExample(null);
 
     setFile(file);
     setImage(null);
@@ -40,7 +64,7 @@ function PredictImage({ model }) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isPredicting) return; // Disable drop during prediction
+    if (isPredicting) return;
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -148,24 +172,45 @@ function PredictImage({ model }) {
   return (
     <main>
       <div className="container">
-        <div
-          className="drop-zone"
-          onClick={handleClick}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          style={dropZoneStyle}
-        >
-          <img src="img.svg" />
-          <input
-            ref={fileInputRef}
-            id="file-upload"
-            type="file"
-            name="image"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={handleInputChange}
-          />
-          <p>{file ? file.name : "Drag & Drop Your Image"}</p>
+        <div className="upload-gallery-row">
+          <div
+            className="drop-zone"
+            onClick={handleClick}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            style={dropZoneStyle}
+          >
+            <img src="img.svg" />
+            <input
+              ref={fileInputRef}
+              id="file-upload"
+              type="file"
+              name="image"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleInputChange}
+            />
+            <p>{file ? file.name : "Drag & Drop Your Image"}</p>
+          </div>
+
+          <div className="gallery-column">
+            <h2 className="gallery-title">
+              Or, choose from the Example Gallery:
+            </h2>
+            <div className="gallery-row">
+              {gallery.map((num) => (
+                <img
+                  key={num}
+                  src={`/examples/${num}.jpg`}
+                  className={`gallery-thumb ${
+                    selectedExample === num ? "selected" : ""
+                  }`}
+                  onClick={() => handleGallerySelect(num)}
+                  style={{ cursor: isPredicting ? "not-allowed" : "pointer" }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="sections">
@@ -196,6 +241,7 @@ function PredictImage({ model }) {
           <h1>How to Use</h1>
           <ol>
             <li>Click or drag an image into the drop zone</li>
+            <li>Or select an image from the gallery</li>
             <li>Click “Start Recognition” and wait for the model prediction</li>
             <li>Observe the predictions in the plot to the right</li>
           </ol>

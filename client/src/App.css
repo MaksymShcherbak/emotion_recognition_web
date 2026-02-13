@@ -380,17 +380,13 @@ progress::-webkit-progress-value {
 .footer div {
   margin-left: 16px;
   padding: 5px;
-  background-color: #373941;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s;
   cursor: pointer;
-}
-
-.footer div:hover {
-  background-color: #4b5160;
+  filter: invert();
 }
 
 .footer div img {
@@ -443,4 +439,58 @@ header .author-link {
 
 .frame {
   margin: 0;
+}
+
+.gallery-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.gallery-thumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.2s linear;
+}
+
+.gallery-thumb:hover {
+  transform: scale(1.1);
+}
+
+.gallery-title {
+  font-weight: normal;
+  margin-bottom: 5px;
+}
+
+.gallery-thumb.selected {
+  border: 3px solid var(--accent);
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.upload-gallery-row {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.drop-zone {
+  flex: 0 0 450px;
+  padding: 30px;
+}
+
+.gallery-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }

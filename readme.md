@@ -26,6 +26,7 @@ This was my **Bachelor's Degree** project at university.
 
 - 🐍 [Python](https://www.python.org/) as the most popular Programming language in the ML field.
 - ⚡ [Keras/TensorFlow](https://keras.io/) Framework for building and training deep learning models.
+- 👀 [OpenCV](https://opencv.org/) for face detection.
 - 🥤 [Flask](https://flask.palletsprojects.com/en/stable/) Framework for creating a web server.
 - 🌎 [React](https://react.dev/) for creating the web client.
 
