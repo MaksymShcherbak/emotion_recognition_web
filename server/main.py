@@ -226,6 +226,8 @@ def post_predict_video():
     if video_file.filename == "":
         return jsonify({"error": "No video selected for uploading"}), 400
 
+    os.makedirs("./tmp", exist_ok=True)
+
     video_file_path = f"./tmp/video{clientId}.mp4"
     video_file.save(video_file_path)
 

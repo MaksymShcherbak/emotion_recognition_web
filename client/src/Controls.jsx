@@ -20,7 +20,7 @@ function Controls({progress, fraction, enabled, predict}) {
     return <div className="controls">
     <p>{progress}</p>
     <progress ref={progressRef} max="1"></progress>
-    <button className={!enabled ? "disabled" : ""} onClick={predict}>Start Recognition</button>
+    <button className={!enabled ? "disabled striped-btn" : "striped-btn"} onClick={predict}>Start Recognition</button>
   </div>;
 }
 

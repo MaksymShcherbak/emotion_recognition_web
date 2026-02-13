@@ -3,133 +3,253 @@ import PredictionPlot from "./PredictionPlot";
 import Controls from "./Controls";
 
 function PredictVideo({ model }) {
+  document.documentElement.style.cssText =
+    "--accent: #5e86de; --accent-light: #d8e5ff";
+
   const [file, setFile] = useState(null);
-  const [video, setVideo] = useState(null);
+  const [videoURL, setVideoURL] = useState(null);
   const [predictions, setPredictions] = useState(null);
-  const [progress, setProgress] = useState('');
+  const [progress, setProgress] = useState("");
   const [fraction, setFraction] = useState(0.0);
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const videoRef = useRef();
+  const intervalRef = useRef(null);
+
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [frameRate, setFrameRate] = useState(25);
+
+  const handleFile = (file) => {
+    if (!file) return;
+
+    setFile(file);
+    setPredictions(null);
+    setProgress("");
+    setFraction(0.0);
+    setIsPredicting(false);
+
+    const url = URL.createObjectURL(file);
+    setVideoURL(url);
+  };
 
   const handleInputChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setVideo(reader.result);
-      };
-      reader.readAsDataURL(file);
+    handleFile(e.target.files[0]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (isPredicting) return;
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
     }
   };
 
-  const predictEmotion = () => {
-  const formData = new FormData();
-  formData.append('video', file);
-  formData.append('model', model);
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
-  fetch('http://localhost:5000/predict_video', {
-      method: 'POST',
-      body: formData
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isPredicting) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleClick = () => {
+    if (isPredicting) return;
+    fileInputRef.current.click();
+  };
+
+  const predictEmotion = () => {
+    if (!file) return;
+
+    setIsPredicting(true);
+    setProgress("");
+    setFraction(0.0);
+    setPredictions(null);
+
+    const formData = new FormData();
+    formData.append("video", file);
+    formData.append("model", model);
+
+    fetch(`${import.meta.env.VITE_SERVER_URL}/predict_video`, {
+      method: "POST",
+      body: formData,
     })
-    .then(response => response.json())
-    .then(data => {
-        let clientId = data.clientId;
-        let interval = null;
+      .then((res) => res.json())
+      .then((data) => {
+        const clientId = data.clientId;
 
         const fetchProgress = () => {
-          fetch(`http://localhost:5000/progress?clientId=${clientId}`)
-            .then(response => response.json())
-            .then(({progress}) => {
+          fetch(
+            `${import.meta.env.VITE_SERVER_URL}/progress?clientId=${clientId}`,
+          )
+            .then((res) => res.json())
+            .then(({ progress }) => {
               if (progress.error) {
-                alert(progress.error)
-                clearInterval(interval);
+                alert(progress.error);
+                clearInterval(intervalRef.current);
+                setIsPredicting(false);
+                setFraction(0);
+                return;
               }
 
               if (progress.predictions) {
                 setPredictions(progress.predictions);
-                setProgress('Complete');
+                setProgress("Complete");
                 setFraction(1);
-                clearInterval(interval);
+                setIsPredicting(false);
+                clearInterval(intervalRef.current);
+              } else {
+                setProgress(progress.msg);
+                setFraction(progress.fraction);
               }
-
-              setProgress(progress.msg);
-              setFraction(progress.fraction);
-            }).catch((e) => console.log(e));
+            })
+            .catch(() => {
+              clearInterval(intervalRef.current);
+              setIsPredicting(false);
+            });
         };
-      
-          interval = setInterval(fetchProgress, 2500);
-        })
-      .catch((e) => console.log(e));
 
-      setFraction(0.00);
-      setProgress('');
-      setPredictions(null);
+        intervalRef.current = setInterval(fetchProgress, 2000);
+      })
+      .catch(() => {
+        setIsPredicting(false);
+      });
   };
 
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    const handleTimeUpdate = () => {
+      if (!predictions) return;
+
+      const duration = videoEl.duration;
+      if (!duration) return;
+
+      const ratio = videoEl.currentTime / duration;
+      const index = Math.floor(ratio * predictions.length);
+
+      setCurrentFrame(Math.min(index, predictions.length - 1));
+    };
+
+    videoEl.addEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      videoEl.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, [frameRate, videoURL, predictions]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (videoURL) URL.revokeObjectURL(videoURL);
+    };
+  }, [videoURL]);
+
   const onExport = () => {
-    const jsonData = JSON.stringify(predictions, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
+    if (!predictions) return;
+
+    const exportData = {
+      file_name: file.name,
+      frames: predictions.length,
+      predictions: predictions,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'predictions.json';
-    document.body.appendChild(a);
+    a.download = "predictions.json";
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const videoRef = useRef();
-  const [currentFrame, setCurrentFrame] = useState(0);
-  const [frameRate, setFrameRate] = useState(0);
-  
-  useEffect(() => {
-    const video = videoRef.current;
-
-    if (video) {
-
-    const handleLoadedMetadata = () => {
-      setFrameRate(video.frameRate || 25);
-    };
-
-    const handleTimeUpdate = () => {
-      const currentTime = video.currentTime;
-      const frameIndex = Math.floor(currentTime * frameRate);
-      setCurrentFrame(frameIndex);
-    };
-
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-
-    return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-    };
-  }
-  }, [frameRate, file, video]);
+  const dropZoneStyle = {
+    cursor: isPredicting ? "not-allowed" : "pointer",
+    opacity: isPredicting ? 0.6 : 1,
+  };
 
   return (
     <main>
       <div className="container">
+        <div
+          className="drop-zone"
+          onClick={handleClick}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          style={dropZoneStyle}
+        >
+          <img src="video.svg" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            style={{ display: "none" }}
+            onChange={handleInputChange}
+          />
+          <p>{file ? file.name : "Click or drag to upload video"}</p>
+        </div>
+
         <div className="sections">
           <div>
-            <div className="inputs">
-              <label htmlFor="file-upload" className="custom-file-upload">
-                Upload Video...
-              </label>
-              <p>{file ? file.name : ""}</p>
-            </div>
-            <input id="file-upload" type="file" onChange={handleInputChange} />
-            {video != null ? <video controls={true} ref={videoRef} muted className="video-upload" src={video} alt="Uploaded" /> : <div className="video-upload"></div>}
-            </div>
-          <PredictionPlot predictions={predictions ? predictions[currentFrame] : null} onExport={onExport}/>
+            {fraction === 1 && videoURL && (
+              <div>
+                <h2 className="frame">
+                  Frame{" "}
+                  {predictions
+                    ? Math.min(currentFrame, predictions.length - 1)
+                    : 0}
+                  {predictions ? ` / ${predictions.length - 1}` : ""}
+                </h2>
+                <video
+                  controls
+                  ref={videoRef}
+                  muted
+                  className="video-upload"
+                  src={videoURL}
+                />
+              </div>
+            )}
+          </div>
+
+          <PredictionPlot
+            predictions={predictions ? predictions[currentFrame] : null}
+            onExport={onExport}
+          />
         </div>
-        <Controls predict={predictEmotion} progress={progress} fraction={fraction} enabled={file != null && (fraction == 0.0 || fraction == 1.0)}/>
+
+        <Controls
+          predict={predictEmotion}
+          progress={progress}
+          fraction={fraction}
+          enabled={file != null && !isPredicting}
+        />
+
         <div className="help">
-          <h1>How to use</h1>
+          <h1>How to Use</h1>
           <ol>
-            <li>Click “Upload Video” and select a relevant file</li>
-            <li>Click “Start Recognition” and wait for the model prediction</li>
-            <li>Play the video to see predictions for each frame</li>
+            <li>Click or drag a video into the drop zone</li>
+            <li>Click “Start Recognition”</li>
+            <li>Play the video to see frame-based predictions</li>
           </ol>
         </div>
       </div>
