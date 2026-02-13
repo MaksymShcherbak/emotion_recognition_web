@@ -9,14 +9,17 @@ import ModelSelector from "./ModelSelector";
 
 function App() {
   const [models, setModels] = useState([]);
+  const [descriptions, setDescriptions] = useState({});
   const [model, setModel] = useState("");
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_SERVER_URL}/models`)
-      .then((response) => response.json())
-      .then((models) => {
-        setModels(models);
-        setModel(models[models.length - 1]);
+      .then((res) => res.json())
+      .then((data) => {
+        setDescriptions(data);
+        const modelNames = Object.keys(data);
+        setModels(modelNames);
+        setModel(modelNames[modelNames.length - 1]);
       });
   }, []);
 
@@ -24,7 +27,12 @@ function App() {
     <div className="app">
       <BrowserRouter>
         <Nav />
-        <ModelSelector models={models} model={model} setModel={setModel} />
+        <ModelSelector
+          models={models}
+          model={model}
+          setModel={setModel}
+          descriptions={descriptions}
+        />
         <Routes>
           <Route index path="/" element={<PredictImage model={model} />} />
           <Route path="/image" element={<PredictImage model={model} />} />

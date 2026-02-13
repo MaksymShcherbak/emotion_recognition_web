@@ -32,11 +32,14 @@ app = Flask(__name__)
 client_progress = {}
 lock = Lock()
 
-
 @app.route("/models", methods=["GET"])
 def get_models():
-    return jsonify(list(models.keys()))
-
+    model_info = {
+        "model_dense": "A fully connected dense network. It has the poorest performance among all models.",
+        "model_convolutional": "A CNN model, which has a good ability to recognize local and global patterns in emotion data.",
+        "model_mobilenetv2": "A model based on MobileNetV2, which has the best performance and works with larger image size compared to other models.",
+    }
+    return jsonify(model_info)
 
 @app.route("/progress", methods=["GET"])
 def get_progress():

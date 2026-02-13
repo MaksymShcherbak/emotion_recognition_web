@@ -494,3 +494,226 @@ header .author-link {
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
+.model-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.model-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background-color: var(--accent);
+  color: white;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #333;
+  color: #fff;
+  text-align: left;
+  padding: 8px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1000;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 14px;
+}
+
+.model-tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+
+  main {
+    padding: 10px;
+    min-height: auto;
+  }
+
+  .container {
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .sections {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sections > div {
+    width: 100%;
+  }
+
+  .sections > div:first-child {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .image-upload,
+  .video-upload {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .image-preview {
+    width: 80px;
+    height: 80px;
+    margin-left: 5px;
+  }
+
+  .drop-zone {
+    flex: 1 1 100%;
+    padding: 20px;
+  }
+
+  .upload-gallery-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .gallery-column {
+    width: 100%;
+  }
+
+  .gallery-row {
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .gallery-thumb {
+    width: 60px;
+    height: 60px;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .controls progress {
+    height: 24px;
+  }
+
+  .controls button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .pause-button {
+    width: 100%;
+    font-size: 18px;
+    padding: 6px 12px;
+  }
+
+  .help ol {
+    max-width: 100%;
+    font-size: 16px;
+    padding-left: 15px;
+  }
+
+  .model-selector {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .tooltip-text {
+    width: 180px;
+    font-size: 13px;
+  }
+
+  .footer div {
+    margin: 5px 5px 0 5px;
+  }
+
+  nav {
+    height: auto;
+  }
+
+  nav > div:first-child {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  nav > div > a > div {
+    width: 100%;
+    padding: 10px;
+  }
+
+  nav > div:nth-child(2) {
+    display: none;
+  }
+
+  .controls p {
+    margin: 0;
+  }
+
+  .results {
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    margin: 10px 0;
+  }
+
+  .results > div {
+    width: 18%;
+    max-width: 60px;
+    min-width: 40px;
+    height: auto;
+    margin: 5px;
+  }
+
+  .results-bar {
+    width: 100%;
+    height: 100px;
+  }
+
+  .emotion,
+  .probability {
+    font-size: 12px;
+  }
+
+  .gallery-row {
+    margin-bottom: 10px;
+  }
+
+  .drop-zone {
+    width: 100%;
+  }
+
+  .footer > div {
+    display: block;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}

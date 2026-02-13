@@ -21,7 +21,7 @@ function PredictImage({ model }) {
   useEffect(() => {
     const nums = new Set();
     while (nums.size < 5) {
-      nums.add(Math.floor(Math.random() * 9) + 1);
+      nums.add(Math.floor(Math.random() * 8) + 1);
     }
     setGallery([...nums]);
   }, []);
