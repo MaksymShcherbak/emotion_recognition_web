@@ -10,7 +10,7 @@ _This is the repository for the Web App. If you're looking for the Jupyter Noteb
 
 Try out the Emotion Recognition neural network in this humble application! It consists of a few different models, each having a different architecture and efficiency.
 
-There are three modes available:
+There are three ways of recognition available:
 
 1. Recognize photo
 2. Recognize video
@@ -81,4 +81,4 @@ npm install
 npm run dev
 ```
 
-The project will be launched with ⚡ (Vite)[https://vite.dev/].
+The project will be launched with ⚡[Vite](https://vite.dev/).
