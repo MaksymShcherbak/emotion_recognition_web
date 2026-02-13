@@ -13,7 +13,7 @@ function App() {
   const [model, setModel] = useState("");
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_SERVER_URL}/models`)
+    fetch(`/models`)
       .then((res) => res.json())
       .then((data) => {
         setDescriptions(data);

@@ -27,21 +27,16 @@ function PredictLive({ model }) {
     formData.append("model", model);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_URL}/predict_image`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const response = await fetch(`/predict_image`, {
+        method: "POST",
+        body: formData,
+      });
       const data = await response.json();
       const clientId = data.clientId;
 
       const fetchProgress = async () => {
         try {
-          const response = await fetch(
-            `${import.meta.env.VITE_SERVER_URL}/progress?clientId=${clientId}`,
-          );
+          const response = await fetch(`/progress?clientId=${clientId}`);
           const { progress } = await response.json();
 
           if (progress.error) {

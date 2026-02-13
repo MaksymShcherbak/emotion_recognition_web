@@ -1,5 +1,5 @@
 from threading import Thread, Lock
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from tensorflow.keras.models import load_model
 import numpy as np
 import cv2
@@ -27,7 +27,7 @@ face_cascade = cv2.CascadeClassifier(
 )
 class_labels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../client/build")
 
 client_progress = {}
 lock = Lock()
@@ -43,19 +43,16 @@ def get_models():
 
 @app.route("/progress", methods=["GET"])
 def get_progress():
-    global client_progress
     clientId = request.args.get("clientId")
     with lock:
         progress = client_progress.get(clientId, {"error": "Unknown client ID"})
     return jsonify({"progress": progress})
-
 
 def update_progress(clientId, new_progress):
     global client_progress
     with lock:
         client_progress[clientId] = new_progress
     print(f"Updated progress for client {clientId}: {new_progress}")
-
 
 def predict_image(clientId, file_content, model):
     try:
@@ -72,9 +69,7 @@ def predict_image(clientId, file_content, model):
             update_progress(clientId, {"error": "No Face detected in the Image"})
             return
 
-        update_progress(
-            clientId, {"msg": "Cropping and Resizing Image", "fraction": 0.4}
-        )
+        update_progress(clientId, {"msg": "Cropping and Resizing Image", "fraction": 0.4})
 
         (x, y, w, h) = faces[0]
         face_img = img[y : y + h, x : x + w]
@@ -86,9 +81,7 @@ def predict_image(clientId, file_content, model):
         update_progress(clientId, {"msg": "Preprocessing Image", "fraction": 0.6})
 
         face_img_resized = (
-            face_img_resized.reshape((1,) + model["image_size"] + (1,)).astype(
-                "float32"
-            )
+            face_img_resized.reshape((1,) + model["image_size"] + (1,)).astype("float32")
             / 255.0
         )
 
@@ -103,6 +96,7 @@ def predict_image(clientId, file_content, model):
             {"label": class_labels[i], "probability": float(pred)}
             for i, pred in enumerate(predictions[0])
         ]
+
         update_progress(
             clientId,
             {
@@ -115,7 +109,6 @@ def predict_image(clientId, file_content, model):
 
     except Exception as e:
         update_progress(clientId, {"error": str(e)})
-
 
 def predict_video(clientId, video_file_path, model):
     try:
@@ -130,10 +123,7 @@ def predict_video(clientId, video_file_path, model):
             i += 1
             update_progress(
                 clientId,
-                {
-                    "msg": f"Predicting Frame {i}/{total_frames}",
-                    "fraction": 0.9 * i / total_frames,
-                },
+                {"msg": f"Predicting Frame {i}/{total_frames}", "fraction": 0.9 * i / total_frames},
             )
 
             ret, frame = video_capture.read()
@@ -142,18 +132,14 @@ def predict_video(clientId, video_file_path, model):
 
             frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            faces = face_cascade.detectMultiScale(
-                frame_gray, scaleFactor=1.1, minNeighbors=5
-            )
+            faces = face_cascade.detectMultiScale(frame_gray, scaleFactor=1.1, minNeighbors=5)
 
             predictions_row = []
             for x, y, w, h in faces:
                 face_img = frame_gray[y : y + h, x : x + w]
                 face_img_resized = cv2.resize(face_img, model["image_size"])
                 face_img_resized = (
-                    face_img_resized.reshape((1,) + model["image_size"] + (1,)).astype(
-                        "float32"
-                    )
+                    face_img_resized.reshape((1,) + model["image_size"] + (1,)).astype("float32")
                     / 255.0
                 )
 
@@ -167,7 +153,6 @@ def predict_video(clientId, video_file_path, model):
         video_capture.release()
 
         transformed_predictions = []
-
         for row in predictions:
             transformed_predictions.append(
                 [
@@ -178,11 +163,7 @@ def predict_video(clientId, video_file_path, model):
 
         update_progress(
             clientId,
-            {
-                "msg": "Completed",
-                "fraction": 1.0,
-                "predictions": transformed_predictions,
-            },
+            {"msg": "Completed", "fraction": 1.0, "predictions": transformed_predictions},
         )
 
     except Exception as e:
@@ -192,33 +173,28 @@ def predict_video(clientId, video_file_path, model):
         if os.path.exists(video_file_path):
             os.remove(video_file_path)
 
-
 @app.route("/predict_image", methods=["POST"])
 def post_predict_image():
-    global client_progress
     clientId = str(uuid.uuid4())
     with lock:
         client_progress[clientId] = {}
 
-    if "image" in request.files:
-        file = request.files["image"]
-        if file.filename == "":
-            return jsonify({"error": "No image selected for uploading"}), 400
-        file_content = file.read()
-    else:
+    if "image" not in request.files:
         return jsonify({"error": "No image part in the request"}), 400
+    file = request.files["image"]
+    if file.filename == "":
+        return jsonify({"error": "No image selected for uploading"}), 400
 
-    model = models[request.form.get("model", "model_mobilenetv2")]
+    file_content = file.read()
+    model = models.get(request.form.get("model", "model_mobilenetv2"), models["model_mobilenetv2"])
 
     thread = Thread(target=predict_image, args=(clientId, file_content, model))
     thread.start()
 
     return jsonify({"clientId": clientId})
 
-
 @app.route("/predict_video", methods=["POST"])
 def post_predict_video():
-    global client_progress
     clientId = str(uuid.uuid4())
     with lock:
         client_progress[clientId] = {}
@@ -230,16 +206,22 @@ def post_predict_video():
         return jsonify({"error": "No video selected for uploading"}), 400
 
     os.makedirs("./tmp", exist_ok=True)
-
     video_file_path = f"./tmp/video{clientId}.mp4"
     video_file.save(video_file_path)
 
-    model = models[request.form.get("model", "model_mobilenetv2")]
+    model = models.get(request.form.get("model", "model_mobilenetv2"), models["model_mobilenetv2"])
 
     thread = Thread(target=predict_video, args=(clientId, video_file_path, model))
     thread.start()
 
     return jsonify({"clientId": clientId})
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

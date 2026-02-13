@@ -84,7 +84,7 @@ function PredictVideo({ model }) {
     formData.append("video", file);
     formData.append("model", model);
 
-    fetch(`${import.meta.env.VITE_SERVER_URL}/predict_video`, {
+    fetch("/predict_video", {
       method: "POST",
       body: formData,
     })
@@ -93,9 +93,7 @@ function PredictVideo({ model }) {
         const clientId = data.clientId;
 
         const fetchProgress = () => {
-          fetch(
-            `${import.meta.env.VITE_SERVER_URL}/progress?clientId=${clientId}`,
-          )
+          fetch(`/progress?clientId=${clientId}`)
             .then((res) => res.json())
             .then(({ progress }) => {
               if (progress.error) {

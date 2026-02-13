@@ -93,7 +93,7 @@ function PredictImage({ model }) {
     formData.append("image", file);
     formData.append("model", model);
 
-    fetch(`${import.meta.env.VITE_SERVER_URL}/predict_image`, {
+    fetch(`/predict_image`, {
       method: "POST",
       body: formData,
     })
@@ -103,9 +103,7 @@ function PredictImage({ model }) {
         let interval = null;
 
         const fetchProgress = () => {
-          fetch(
-            `${import.meta.env.VITE_SERVER_URL}/progress?clientId=${clientId}`,
-          )
+          fetch(`/progress?clientId=${clientId}`)
             .then((response) => response.json())
             .then(({ progress }) => {
               if (progress.error) {
